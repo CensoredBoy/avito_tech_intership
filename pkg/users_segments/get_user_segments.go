@@ -39,14 +39,6 @@ func (h handler) GetUserSegments(ctx *gin.Context) {
 
 	h.DB.Model(&user).Association("Segments").Find(&userSegments)
 
-    // Если у пользователя нет сегментов, записываем в контекст соответствующий ответ
-
-	if len(userSegments) == 0 {
-
-		ctx.JSON(http.StatusNoContent, gin.H{"type": "info", "message": "this user has no segments"})
-		return
-
-	}
 
     // Ищем истекшие сегменты пользователя
 
@@ -102,6 +94,15 @@ func (h handler) GetUserSegments(ctx *gin.Context) {
 		  userSlugs = append(userSlugs, v.Slug)
         }
 	}
+
+    // Если у пользователя нет сегментов, записываем в контекст соответствующий ответ
+
+    if len(userSlugs) == 0 {
+
+        ctx.JSON(http.StatusNoContent, gin.H{"type": "info", "message": "this user has no segments"})
+        return
+
+    }
 
 	responseBody := models.GetUserSegmentsResponseBody{"success", user.UserId, userSlugs}
 	responseBodyJSON, err := json.Marshal(responseBody)
