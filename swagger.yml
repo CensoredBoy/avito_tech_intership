@@ -1,0 +1,272 @@
+openapi: 3.0.3
+info:
+  title: Avito segments API service
+  description: |-
+    This service is the task of one of the qualifying stages of selection for the AvitoTech internship, performed by: `Efremov Danila Yurievich`
+  contact:
+    email: developmentdaniil@gmail.com
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080/
+tags:
+  - name: segment
+    description: Working with segments
+  - name: user_segments
+    description: working with user segment
+paths:
+  /segment/add:
+    post:
+      tags:
+        - segment
+      summary: Add a new segment
+      description: Create a new segment by slug
+      operationId: addSegment
+      requestBody:
+        description: Create a new segment
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Segment'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'          
+        '400':
+          description: Invalid input
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/BadInputResponse'
+        '409':
+          description: Occurs when segment is in database
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentExists'
+              
+  /segment/delete:
+    post:
+      tags:
+        - segment
+      summary: Delete existing segment
+      description: Delete existing segment by slug
+      operationId: deleteSegment
+      requestBody:
+        description: Delete existing segment
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Segment'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/BadInputResponse'
+        '404':
+          description: Segment with given slug does not exists
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentNotFound'
+      
+  /user_segments/change:
+    post:
+      tags:
+        - user_segments
+      summary: Change user segments
+      description: Delete or add segments to the user, segment slugs that are not in the database are ignored, if user is not in database, it is created
+      operationId: changeUserSegments
+      requestBody:
+        description: array "slugs_to_add" with slugs of segments you want to add to user with given user id in "user_id" and slugs in "slugs_to_delete" of segments you wanrt to delete
+        content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeUserSegment'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/BadInputResponse'
+        '409':
+          description: Occurs when the slugs of segments to be added existing in the database  are found in the slugs of segments to be deleted existing in the database 
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/ConflictResponse'
+  
+  /user_segments/get:
+    post:
+      tags:
+        - user_segments
+      summary: Get user segments
+      description: Get user segments by user id
+      operationId: getUserSegments
+      requestBody:
+        content:
+          application/json:
+              schema:
+                $ref: '#/components/schemas/UserId'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSegments'
+        '400':
+          description: Invalid input
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/BadInputResponse'
+        '204':
+          description: When user has no segments 
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/NoContent'
+        '404':
+          description: When user is not in database 
+          content:
+           application/json:
+            schema:
+              $ref: '#/components/schemas/UserIsNotExists'
+      
+          
+        
+    
+components:
+  schemas:
+    UserIsNotExists:
+      type: object
+      properties:
+        type:
+          type: string
+          example: error
+        message:
+          type: string
+          example: this user is not exists 
+    NoContent:
+      type: object
+      properties:
+        type:
+          type: string
+          example: info
+        message:
+          type: string
+          example: this user has no segments
+    UserSegments:
+      type: object
+      properties:
+        type:
+          type: string
+          example: success
+        user_id:
+          type: integer
+          example: 1001
+        slugs:
+          type: array
+          items:
+            type: string
+            example: AVITO_DISCOUNT_30
+            
+    UserId:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1001
+    ChangeUserSegment:
+      type: object
+      properties:
+        slugs_to_add:
+          type: array
+          items:
+            type: string
+            example: AVITO_DISCOUNT_30
+        slugs_to_delete:
+          type: array
+          items:
+            type: string
+            example: AVITO_DISCOUNT_50
+        user_id:
+          type: integer  
+          example: 1000
+            
+    SegmentNotFound:
+      type: object
+      properties:
+        type:
+          type: string
+          example: error
+        message:
+          type: string
+          example: there is no segment with this slug
+    SuccessResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: success
+        message:
+          type: string
+          example: success
+    BadInputResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: bad input
+    ConflictResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: segments to add are found in segments to delete
+    
+    Segment:
+      required:
+        - slug
+      type: object
+      properties:
+        slug:
+          type: string
+          example: AVITO_DISCOUNT_30
+    SegmentExists:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: this segment is exists  
