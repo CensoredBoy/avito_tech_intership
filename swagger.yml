@@ -90,7 +90,7 @@ paths:
       description: Delete or add segments to the user, segment slugs that are not in the database are ignored, if user is not in database, it is created
       operationId: changeUserSegments
       requestBody:
-        description: array "slugs_to_add" with slugs of segments you want to add to user with given user id in "user_id" and slugs in "slugs_to_delete" of segments you wanrt to delete
+        description: array "slugs_to_add" with slugs of segments you want to add to user with given user id in "user_id" and slugs in "slugs_to_delete" of segments you wanrt to delete. The "expires" parameter is OPTIONAL
         content:
             application/json:
               schema:
@@ -215,6 +215,10 @@ components:
         user_id:
           type: integer  
           example: 1000
+        expires:
+          type: string
+          format: date-time
+          example: "2021-12-12 00:00:00"
             
     SegmentNotFound:
       type: object

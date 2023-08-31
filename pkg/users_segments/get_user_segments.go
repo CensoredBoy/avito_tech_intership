@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+    "time"
 )
 
 func (h handler) GetUserSegments(ctx *gin.Context) {
@@ -38,22 +39,70 @@ func (h handler) GetUserSegments(ctx *gin.Context) {
 
 	h.DB.Model(&user).Association("Segments").Find(&userSegments)
 
-    // Если у пользователя нет сегментов, записываем в контекст соответствующий ответ
 
-	if len(userSegments) == 0 {
+    // Ищем истекшие сегменты пользователя
 
-		ctx.JSON(http.StatusNoContent, gin.H{"type": "info", "message": "this user has no segments"})
-		return
+    var userSegmentsIds []uint
 
-	}
+    for _, v := range userSegments {
+        userSegmentsIds = append(userSegmentsIds, v.ID)
+    }
+
+    var associations []models.SegmentAssociation
+
+    // Сначала ищем все сегменты пользователя и время их истечения в таблице связи между сегментом и пользователем
+
+    if result := h.DB.Raw("SELECT segment_id, expires FROM user_segment WHERE user_id = ? AND segment_id IN (?)", user.ID, userSegmentsIds).Scan(&associations); result.Error != nil{
+        ctx.JSON(http.StatusInternalServerError, gin.H{"type": "error", "message": "db error"})
+        return
+    }
+
+    // Находим истекшие сегменты пользователя
+    // Хеш таблица нужна для того, чтобы запомнить истекшие сегменты и иметь к ним быстрый доступ за О(1) потом
+
+    var userSegmentsExpired []uint
+    userSegmentsExpiredMap := make(map[uint]bool)
+
+    currentTime := time.Now().Unix()
+
+    for _, v := range associations{
+        if v.Expires != nil {
+            if currentTime > v.Expires.Unix() {
+                userSegmentsExpired = append(userSegmentsExpired, v.SegmentId)
+                userSegmentsExpiredMap[v.SegmentId] = true
+            }
+        }
+    }
+
+    // Удаляем истекшие связи
+
+    if _, err := h.DB.Raw("DELETE FROM user_segment WHERE user_id = ? AND segment_id IN (?)", user.ID, userSegmentsExpired).Rows(); err != nil{
+        ctx.JSON(http.StatusInternalServerError, gin.H{"type": "error", "message": "db error"})
+        return
+    }
+
 
     // Берем только названия (slugs) сегментов
 
 	var userSlugs []string
 
 	for _, v := range userSegments {
-		userSlugs = append(userSlugs, v.Slug)
+
+        // Здесь понадобился быстрый доступ к истекшим сегментам, чтобы лишний раз не делать запрос к БД, фильтруем имеющиеся сегменты
+
+        if !userSegmentsExpiredMap[v.ID] {
+		  userSlugs = append(userSlugs, v.Slug)
+        }
 	}
+
+    // Если у пользователя нет сегментов, записываем в контекст соответствующий ответ
+
+    if len(userSlugs) == 0 {
+
+        ctx.JSON(http.StatusNoContent, gin.H{"type": "info", "message": "this user has no segments"})
+        return
+
+    }
 
 	responseBody := models.GetUserSegmentsResponseBody{"success", user.UserId, userSlugs}
 	responseBodyJSON, err := json.Marshal(responseBody)

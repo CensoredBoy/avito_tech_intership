@@ -3,6 +3,8 @@ version: '3.8'
 services:
   web:
     image: "avito_segments:latest"
+    environment:
+      - TZ=Europe/Moscow
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -16,6 +18,7 @@ services:
       - POSTGRES_DB=dynamic_user_segmentation
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
+      - TZ=Europe/Moscow
     ports:
       - "5432:5432"
     volumes:

@@ -21,4 +21,5 @@ type ChangeUserSegmentsRequestBody struct {
 	SlugsToAdd    []string `json:"slugs_to_add"`
 	SlugsToDelete []string `json:"slugs_to_delete"`
 	UserId        uint     `json:"user_id"`
+	Expires       *string  `json:"expires"`
 }

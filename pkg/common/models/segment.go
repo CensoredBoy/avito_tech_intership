@@ -1,5 +1,8 @@
 package models
 
+import(
+    "time"
+)
 
 type Segment struct {
     ID         uint    `gorm:"primarykey"`
@@ -9,4 +12,9 @@ type Segment struct {
 
 type SegmentRequestBody struct {
     Slug       string `json:"slug"`
+}
+
+type SegmentAssociation struct {
+    SegmentId uint
+    Expires   *time.Time `gorm:"datetime:timestamp"`
 }

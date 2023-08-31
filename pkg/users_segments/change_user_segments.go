@@ -4,6 +4,7 @@ import (
 	"avito_task_segments/pkg/common/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func (h handler) ChangeUserSegments(ctx *gin.Context) {
@@ -85,6 +86,24 @@ func (h handler) ChangeUserSegments(ctx *gin.Context) {
 
 	h.DB.Model(&user).Association("Segments").Append(slugsToAddUnique)
 	h.DB.Model(&user).Association("Segments").Delete(slugsToDelete)
+
+	// Если в запросе встретился ключ expires, то всем сегментам, которые мы добавили пользователю, в таблице связей задаем время, в которое этот сегмент у пользователя истекает
+
+	if body.Expires != nil {
+		date, error := time.Parse("2006-01-02 15:04:05", *body.Expires)
+		if error != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"type": "error", "message": "bad input"})
+			return
+		}
+		var slugsToAddUniqueIds []uint;
+		for _, v := range slugsToAddUnique {
+			slugsToAddUniqueIds = append(slugsToAddUniqueIds, v.ID)
+		}
+		if _, err := h.DB.Raw("UPDATE \"user_segment\" SET \"expires\" = ? WHERE \"user_id\" = ? AND \"segment_id\" IN (?)", date.Format("2006-01-02 15:04:05"), user.ID, slugsToAddUniqueIds).Rows(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"type": "error", "message": "db error"})
+			return
+		}
+	}
 
 	ctx.JSON(http.StatusCreated, gin.H{"type": "success", "message": "success"})
 
