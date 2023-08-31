@@ -12,5 +12,8 @@ create table segments (
 create table user_segment(
 	segment_id integer REFERENCES segments(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id integer REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT user_segment_pk PRIMARY KEY(segment_id, user_id)
+	CONSTRAINT user_segment_pk PRIMARY KEY(segment_id, user_id),
+	expires timestamptz 
 );
+
+SET timezone = 'Europe/Moscow';
