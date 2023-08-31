@@ -1,7 +1,7 @@
 
 ## Запуск
 
-	docker-compose up --build
+  docker-compose up --build
 
 ## Общее
 #### В случае некорректного ввода все методы возвращают ответ (400)
@@ -19,7 +19,7 @@
 ### Добавление сегмента (POST)
 > http://localhost:8080/segment/add
 #### Пример запроса
-	curl -X POST http://localhost:8080/segment/add -d '{"slug":"ONE"}'
+  curl -X POST http://localhost:8080/segment/add -d '{"slug":"ONE"}'
 #### Ответ в случае успеха (201)
 ```json
 {
@@ -37,7 +37,7 @@
 ### Удаление сегмента (POST)
 > http://localhost:8080/segment/delete
 #### Пример запроса
-	curl -X POST http://localhost:8080/segment/delete -d '{"slug":"ONE"}'
+  curl -X POST http://localhost:8080/segment/delete -d '{"slug":"ONE"}'
 #### Ответ в случае успеха (201)
 ```json
 {
@@ -68,11 +68,12 @@
   "slugs_to_delete": [
     "AVITO_DISCOUNT_50"
   ],
-  "user_id": 1000
+  "user_id": 1000,
+  "expires": "2021-12-12 00:00:00" // optional
 }
 ```
 #### Пример запроса
-	curl -X POST http://localhost:8080/users_segments/add -d '{"slugs_to_add":["ONE", "THREE"], "slugs_to_delete": ["TWO"], "user_id":10100}'
+  curl -X POST http://localhost:8080/users_segments/add -d '{"slugs_to_add":["ONE", "THREE"], "slugs_to_delete": ["TWO"], "user_id":10100}'
 
 > Сегменты, которых нет в БД, игнорируются, если пользователя нет в БД, он создается
 
@@ -90,10 +91,14 @@
   "message": "segments to add are found in segments to delete"
 }
 ```
+> Также присутствует необязательный параметр "expires", передавая который, можно задать, до какого времени пользователь будет иметь добавленные сегменты, значение параметра должно быть в формате "yyyy-mm-dd hh:mm:ss", временная зона, поддерживаемая сервисом: "Europe/Moscow"
+
+#### Пример запроса с параметром "expires"
+  curl -X POST http://localhost:8080/users_segments/change -d '{"slugs_to_add":["SEGMENT"], "slugs_to_delete": [], "user_id":10100, "expires":"2023-08-31 22:02:00"}'
 ### Получение пользовательских сегментов (POST)
-	http://localhost:8080/users_segments/get
+  http://localhost:8080/users_segments/get
 #### Пример запроса
-	curl -X POST http://localhost:8080/users_segments/get -d '{"user_id":1001}'
+  curl -X POST http://localhost:8080/users_segments/get -d '{"user_id":1001}'
 #### Ответ в случае успеха (200)
 ```json
 {
